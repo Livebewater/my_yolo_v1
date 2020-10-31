@@ -70,46 +70,68 @@ class COCODataset(Dataset):
             img = cv2.imread(img_file)
         return img, id_
 
+    def visual(self, pic, img_id_):
+        anno_id_ = self.coco.getAnnIds(imgIds=[int(img_id_)], iscrowd=None)
+        annotation = self.coco.loadAnns(anno_id_)
+        rgb_pic = np.zeros_like(pic)
+        rgb_pic[:, :, ] = pic[:, :, (2, 1, 0)]
+        plt.subplot(1, 2, 1)
+        for anno in annotation:
+            box = anno["bbox"]
+            rgb_pic[int(box[1]), int(box[0]):int(box[0] + box[2]), :] = [255, 0, 0]
+            rgb_pic[int(box[1]):int(box[1] + box[3]), int(box[0]), :] = [255, 0, 0]
+            rgb_pic[int(box[1] + box[3]), int(box[0]):int(box[0] + box[2]), :] = [255, 0, 0]
+            rgb_pic[int(box[1]):int(box[1] + box[3]), int(box[0] + box[2]), :] = [255, 0, 0]
+            # plt.text(coco_class_index[anno["category_id"]])
+        plt.axis("off")
+        plt.imshow(rgb_pic)
 
-def visual(pic, annotation):
-    rgb_pic = np.zeros_like(pic)
-    rgb_pic[:, :, 0] = pic[:, :, 2]
-    rgb_pic[:, :, 1] = pic[:, :, 1]
-    rgb_pic[:, :, 2] = pic[:, :, 0]
-    plt.figure(1)
-    box = annotation["bbox"]
-    rgb_pic[int(box[1]), int(box[0]):int(box[0] + box[2]), :] = [255, 0, 0]
-    rgb_pic[int(box[1]):int(box[1] + box[3]), int(box[0]), :] = [255, 0, 0]
-    rgb_pic[int(box[1] + box[3]), int(box[0]):int(box[0] + box[2]), :] = [255, 0, 0]
-    rgb_pic[int(box[1]):int(box[1] + box[3]), int(box[0] + box[2]), :] = [255, 0, 0]
-    plt.title()
-    plt.imshow(rgb_pic)
+        plt.subplot(1, 2, 2)
+        plt.imshow(pic[:, :, (2, 1, 0)])
+        self.coco.showAnns(annotation)
+        plt.axis("off")
+        plt.show()
 
+    def __getitem__(self, index):
+        img, id_ = self.pull_image(index)
+        anno_id_ = self.coco.getAnnIds(imgIds=[int(id_)], iscrowd=None)
+        annotations = self.coco.loadAnns(anno_id_)  # get annotation information id
 
-def __getitem__(self, index):
-    img, id_ = self.pull_image(index)
-    anno_id_ = self.coco.getAnnIds(imgIds=[int(id_)], iscrowd=None)
-    annotations = self.coco.loadAnns(anno_id_)  # get annotation information id
+        assert img is not None
 
-    assert img is not None
+        h, w, c = img.shape
 
-    h, w, c = img.shape
+        target = []
 
-    target = []
+        for anno in annotations:
+            x1 = np.max((0, anno["bbox"][0]))
+            y1 = np.max((0, anno["bbox"][1]))
+            x2 = np.min((w - 1, x1 + np.max((0, anno["bbox"][2] - 1))))
+            y2 = np.min((h - 1, y1 + np.max((0, anno["bbox"][3] - 1))))
+            if anno["area"] > 0 and x2 >= x1 and y2 >= y1:
+                label_ind = anno["category_id"]
+                cls_id = self.class_ids.index(label_ind)
+                print(label_ind, cls_id)
+                x1 /= w
+                y1 /= h
+                x2 /= w
+                y2 /= h
+                target.append([x1, y1, x2, y2, cls_id])
 
-    for anno in annotations:
-        x1 = np.max((0, anno["bbox"][0]))
-        y1 = np.max((0, anno["bbox"][1]))
-        x2 = np.min((w - 1, x1 + np.max((0, anno["bbox"][2] - 1))))
-        y2 = np.min((h - 1, y1 - np.max((0, anno["bbox"][3] - 1))))
+        if len(target) == 0:
+            target = np.zeros([1, 5])
+        else:
+            target = np.array(target)
+        if self.transform is not None:
+            img, boxes, labels = self.transform(img, target[:, :4], target[:, 4])
+            img = img[:, :, (2, 1, 0)]
+            target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
+        return torch.from_numpy(img).permute(2, 0, 1), target
 
 
 if __name__ == "__main__":
     cocoDataset = COCODataset()
     img, _ = cocoDataset.pull_image(0)
 
-    visual(img, cocoDataset[0])
-
-    plt.show()
-
-    plt.show()
+    cocoDataset.visual(img, _)
+    print(cocoDataset[0])
