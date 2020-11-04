@@ -28,13 +28,13 @@ coco_class_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 1
 
 
 class COCODataset(Dataset):
-    def __init__(self, data_dir="/home/LiuRunJi/Document/Dataset", json_file="instances_train2017.json",
+    def __init__(self, root_dir="/home/yuki/Documents/DataSet/coco/", json_file="instances_train2017.json",
                  name="train2017", img_size=416, transform=None,
                  min_size=1,
                  debug=False):
-        self.data_dir = data_dir
+        self.data_dir = os.path.join(root_dir, "example")
         self.json_file = json_file
-        self.coco = COCO(os.path.join(self.data_dir, 'annotations', self.json_file))
+        self.coco = COCO(os.path.join(root_dir, 'annotations', self.json_file))
         self.ids = self.coco.getImgIds()  # get all image id
         if debug:
             self.ids = self.ids[1:2]
@@ -49,8 +49,9 @@ class COCODataset(Dataset):
     def __len__(self):
         return len(self.ids)
 
-    def pull_image(self, index):
-        id_ = self.ids[index]
+    def pull_image(self, index, id_=None):
+        if id_ is None:
+            id_ = self.ids[index]
         img_file = os.path.join(self.data_dir, self.name, f"{id_:012}.jpg")  # 012
         img = cv2.imread(img_file)
 
@@ -68,6 +69,7 @@ class COCODataset(Dataset):
 
         if img is None:
             img = cv2.imread(img_file)
+        assert img is not None
         return img, id_
 
     def visual(self, pic, img_id_):
@@ -78,10 +80,16 @@ class COCODataset(Dataset):
         plt.subplot(1, 2, 1)
         for anno in annotation:
             box = anno["bbox"]
-            rgb_pic[int(box[1]), int(box[0]):int(box[0] + box[2]), :] = [255, 0, 0]
-            rgb_pic[int(box[1]):int(box[1] + box[3]), int(box[0]), :] = [255, 0, 0]
-            rgb_pic[int(box[1] + box[3]), int(box[0]):int(box[0] + box[2]), :] = [255, 0, 0]
-            rgb_pic[int(box[1]):int(box[1] + box[3]), int(box[0] + box[2]), :] = [255, 0, 0]
+            rb = np.min([int(box[0] + box[2]), pic.shape[1] - 1])
+            rt = np.min([int(box[0]), pic.shape[1] - 1])
+            lt = np.min([int(box[1]), pic.shape[0] - 1])
+            lb = np.min([int(box[1] + box[3]), pic.shape[0] - 1])
+
+            rgb_pic[lt:lb, rt, :] = [255, 0, 0]
+            rgb_pic[lb, rt:rb, :] = [255, 0, 0]
+            rgb_pic[lt, rt:rb, :] = [255, 0, 0]
+            rgb_pic[lt:lb, rb, :] = [255, 0, 0]
+
             # plt.text(coco_class_index[anno["category_id"]])
         plt.axis("off")
         plt.imshow(rgb_pic)
@@ -131,7 +139,7 @@ class COCODataset(Dataset):
 
 if __name__ == "__main__":
     cocoDataset = COCODataset()
-    img, _ = cocoDataset.pull_image(0)
-
-    cocoDataset.visual(img, _)
-    print(cocoDataset[0])
+    example_id = 1999
+    img, _ = cocoDataset.pull_image(0, example_id)
+    cocoDataset.visual(img, _, )
+    # print(cocoDataset[0])
