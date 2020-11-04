@@ -45,10 +45,10 @@ class MyYolo(nn.Module):
         pred = self.pred(out).view(out.shape[0], 1 + self.num_classes + 4, -1)
         Batch, HW, C = pred.shape
 
-        conf = pred[:, :, 0]  # 置信度
+        conf = pred[:, :, :1]  # 置信度
         class_prob_pred = pred[:, :, 1: self.num_classes + 1]  # 类别概率
         box = pred[:, :, self.num_classes + 1:]  # box中心位置,偏移量
-
+        print(conf.shape)
         if self.trainable:
             conf_loss, class_loss, box_loss, loss = tools.loss(pred_conf=conf, pred_cls=class_prob_pred,
                                                                pred_txtytwth=box, label=target)

@@ -5,12 +5,12 @@ from torch.utils.tensorboard import SummaryWriter
 
 input_size = [608, 608]
 data_dir = "/home/yuki/Documents/DataSet/coco/"
-cocoDataset = COCODataset(
-    data_dir=data_dir,
-    img_size=608,
-    transform=None,
-    debug=False
-)
+# cocoDataset = COCODataset(
+#     data_dir=data_dir,
+#     img_size=608,
+#     transform=None,
+#     debug=False
+# )
 yolo_net = MyYolo(input_size=input_size, trainable=True)
 writer = SummaryWriter(".")
-writer.add_graph(yolo_net, torch.randn([608, 608, 1]))
+writer.add_graph(yolo_net, torch.randn([1, 3, 608, 608]))

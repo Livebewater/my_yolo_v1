@@ -22,13 +22,14 @@ def conv1x1(in_planes, out_planes, stride=1):
 
 
 class BasicBlock(nn.Module):
+    expansion = 1
+
     def __init__(self, in_planes, out_planes, stride=1, downsample=None):
-        self.expansion = 1
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(in_planes, out_planes, stride)
         self.bn1 = nn.BatchNorm2d(out_planes)
         self.relu = nn.ReLU(inplace=True)
-        self.conv2 = conv3x3(out_planes, out_planes, stride=stride)
+        self.conv2 = conv3x3(out_planes, out_planes)
         self.bn2 = nn.BatchNorm2d(out_planes)
         self.downsample = downsample
         self.stride = stride
@@ -41,8 +42,7 @@ class BasicBlock(nn.Module):
         out = self.relu(self.bn2(out))
 
         if self.downsample is not None:
-            raw_data = self.downsample(data)
-
+            raw_data = self.downsample(raw_data)
         out += raw_data
         out = self.relu(out)
         return out
@@ -51,12 +51,20 @@ class BasicBlock(nn.Module):
 class ResNet(nn.Module):
 
     def __init__(self, block, layers, zero_init_residual=True):
+        '''
+
+        Args:
+            block:
+            layers:  for example resnet18 [2, 2, 2, 2]
+            zero_init_residual:
+        '''
         super(ResNet, self).__init__()
         self.in_planes = 64
-        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)
+        self.conv1 = nn.Conv2d(3, 64, kernel_size=7, stride=2, padding=3, bias=False)  # 304
+        self.bn1 = nn.BatchNorm2d(64)
         self.relu = nn.ReLU(inplace=True)
-        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_year(block, 64, layers[0])
+        self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)  # 152
+        self.layer1 = self._make_layer(block, 64, layers[0])
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=2)
@@ -64,12 +72,10 @@ class ResNet(nn.Module):
             for m in self.modules():
                 if isinstance(m, BasicBlock):
                     nn.init.constant_(m.bn2.weight, 0)
-                # elif isinstance(m, Bottleneck):
-                #     nn.init.constant_(m.bn3.weight, 0)
                 else:
-                    raise Exception
+                    pass
 
-    def _make_year(self, block, out_planes, blocks, stride=1):
+    def _make_layer(self, block, out_planes, blocks, stride=1):
         downsample = None
         if stride != 1 or self.in_planes != out_planes * block.expansion:
             downsample = nn.Sequential(
@@ -77,10 +83,13 @@ class ResNet(nn.Module):
                 nn.BatchNorm2d(out_planes * block.expansion)
             )
 
-        layers = [block(self.in_planes, out_planes, stride, downsample)]
+        layers = []
+
+        layers.append(block(self.in_planes, out_planes, stride, downsample))
         self.in_planes = out_planes * block.expansion
-        for _ in range(blocks):  # blocks means repeat times
+        for _ in range(1, blocks):
             layers.append(block(self.in_planes, out_planes))
+
         return nn.Sequential(*layers)
 
     def forward(self, x):
