@@ -1,7 +1,7 @@
 import torch.nn as nn
 import torch
 from backbone.resnet import resnet18
-from utils import Conv2d, SPP, SAM
+from utils.modules import Conv2d, SPP, SAM
 import tools
 
 
