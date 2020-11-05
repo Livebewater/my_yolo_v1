@@ -2,6 +2,7 @@ from data.cocodataset import *
 import torch
 from models.yolo import MyYolo
 from torch.utils.tensorboard import SummaryWriter
+from utils.augmentations import *
 from data import *
 import tools
 import torch.optim as optim
@@ -17,12 +18,12 @@ data_dir = "/home/LiuRunJi/Document/Dataset/coco/"
 cocoDataset = COCODataset(
     root_dir=data_dir,
     img_size=608,
-    transform=None,
+    transform=SSDAugmentation(608, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
     debug=False
 )
-yolo_net = MyYolo(input_size=input_size, trainable=True)
+yolo_net = MyYolo(input_size=input_size, device=device, trainable=True)
 batch_size = 1
-train_dataloader = torch.utils.data.DataLoader(
+train_dataLoader = torch.utils.data.DataLoader(
     cocoDataset,
     batch_size=batch_size,
     shuffle=True,
@@ -30,7 +31,7 @@ train_dataloader = torch.utils.data.DataLoader(
     num_workers=8
 )
 optimizer = optim.SGD(yolo_net.parameters(), lr=1e-4, momentum=0.9, weight_decay=5e-4)
-for data, label in train_dataloader:
+for data, label in train_dataLoader:
     labels = [_.tolist() for _ in label]
     images = data.to(device)
     targets = torch.FloatTensor(tools.gt_creator(input_size=input_size, stride=yolo_net.stride, label_lists=labels)).to(
