@@ -3,10 +3,11 @@ import torch
 from backbone.resnet import resnet18
 from utils.modules import Conv2d, SPP, SAM
 import tools
+import numpy as np
 
 
 class MyYolo(nn.Module):
-    def __init__(self, input_size, num_classes=80, trainable=False, conf_thresh=0.01,
+    def __init__(self, input_size, device, num_classes=80, trainable=False, conf_thresh=0.01,
                  nms_threshold=0.5, hr=False):
         super(MyYolo, self).__init__()
         self.num_classes = num_classes
@@ -16,7 +17,9 @@ class MyYolo(nn.Module):
         self.stride = 49
         self.grid_cell = self.create_grid(input_size)
         self.input_size = input_size
-
+        # w, h, w, h
+        self.scale = np.array([[[input_size[1], input_size[0], input_size[1], input_size[0]]]])
+        self.scale_torch = torch.tensor(self.scale.copy(), device=device).float()
         self.backbone = resnet18(pretrained=True)
         self.SPP = SPP(512, 512)
         self.SAM = SAM(512)
@@ -36,7 +39,7 @@ class MyYolo(nn.Module):
         grid_xy = grid_xy.view(1, hs * ws, 2)  # 得到图片每个grid左上角的坐标 [0,1]-[hs-1, ws-1]
         return grid_xy
 
-    def forward(self, data, target=None):
+    def forward(self, data, targets=None):
         out = self.backbone(data)
         out = self.SPP(out)
         out = self.SAM(out)
@@ -44,18 +47,18 @@ class MyYolo(nn.Module):
 
         pred = self.pred(out).view(out.shape[0], 1 + self.num_classes + 4, -1)
         Batch, HW, C = pred.shape
-
+        print(pred.shape)
         conf = pred[:, :, :1]  # 置信度
         class_prob_pred = pred[:, :, 1: self.num_classes + 1]  # 类别概率
         box = pred[:, :, self.num_classes + 1:]  # box中心位置,偏移量
         print(conf.shape)
         if self.trainable:
             conf_loss, class_loss, box_loss, loss = tools.loss(pred_conf=conf, pred_cls=class_prob_pred,
-                                                               pred_txtytwth=box, label=target)
+                                                               pred_txtytwth=box, label=targets)
             return conf_loss, class_loss, box_loss, loss
         else:
             conf = torch.sigmoid(conf)
-            box = torch.clamp()
+            box = torch.clamp((self.decode_boxes(box) / self.scale_torch), 0., 1.)  # 归一化 x对应图像的width, y 对应图像的height
             class_pred = torch.softmax(class_prob_pred, 1) * conf
             box, scores, class_pred = self.process(box, class_pred)
             return box, scores, class_pred
@@ -65,6 +68,11 @@ class MyYolo(nn.Module):
         self.grid_cell = self.create_grid(input_size)
 
     def decode_boxes(self, pred):
+        """
+
+        :param pred: dx, dy, ln(w), ln(h)
+        :return: x_min, y_min, x_max, y_max
+        """
         output = torch.zeros_like(pred)  # 得到的pred也是按照grid顺序的
         pred[:, :, 2] = torch.sigmoid(pred[:, :, 2]) + self.grid_cell
         pred[:, :, 2:] = torch.exp(pred[:, :, 2:])
