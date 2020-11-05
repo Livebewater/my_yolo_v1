@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset
 import cv2
 from pycocotools.coco import COCO
+import torchvision.transforms as T
 
 coco_class_labels = ('background',
                      'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus', 'train', 'truck',
@@ -26,13 +27,19 @@ coco_class_index = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 13, 14, 15, 16, 17, 18, 1
                     46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59, 60, 61, 62, 63, 64, 65, 67,
                     70, 72, 73, 74, 75, 76, 77, 78, 79, 80, 81, 82, 84, 85, 86, 87, 88, 89, 90]
 
+transform = T.Compose(
+    [T.ToPILImage(),
+     T.Resize([416, 416]),
+     T.ToTensor()]
+)
+
 
 class COCODataset(Dataset):
     def __init__(self, root_dir="/home/yuki/Documents/DataSet/coco/", json_file="instances_train2017.json",
                  name="train2017", img_size=416, transform=None,
                  min_size=1,
                  debug=False):
-        self.data_dir = os.path.join(root_dir, "example")
+        self.data_dir = os.path.join(root_dir, "")
         self.json_file = json_file
         self.coco = COCO(os.path.join(root_dir, 'annotations', self.json_file))
         self.ids = self.coco.getImgIds()  # get all image id
@@ -119,7 +126,6 @@ class COCODataset(Dataset):
             if anno["area"] > 0 and x2 >= x1 and y2 >= y1:
                 label_ind = anno["category_id"]
                 cls_id = self.class_ids.index(label_ind)
-                print(label_ind, cls_id)
                 x1 /= w
                 y1 /= h
                 x2 /= w
@@ -130,11 +136,12 @@ class COCODataset(Dataset):
             target = np.zeros([1, 5])
         else:
             target = np.array(target)
+
         if self.transform is not None:
-            img, boxes, labels = self.transform(img, target[:, :4], target[:, 4])
-            img = img[:, :, (2, 1, 0)]
+            img = img[:, :, (2, 1, 0)].transpose(2, 0, 1)
+            img, boxes, labels = np.array(self.transform(img)), target[:, :4], target[:, 4]
             target = np.hstack((boxes, np.expand_dims(labels, axis=1)))
-        return torch.from_numpy(img).permute(2, 0, 1), target
+        return torch.from_numpy(img), target
 
 
 if __name__ == "__main__":

@@ -86,9 +86,11 @@ def generate_dxdywh(gt_label, w, h, s):
     return grid_x, grid_y, tx, ty, tw, th, weight
 
 
-def gt_creator(input_size, stride, label_lists=[], name='VOC'):
+def gt_creator(input_size, stride, label_lists=None, name='VOC'):
+    if label_lists is None:
+        label_lists = []
     assert len(input_size) > 0 and len(label_lists) > 0
-    # prepare the all empty gt datas
+    # prepare the all empty gt data
     batch_size = len(label_lists)
     w = input_size[1]
     h = input_size[0]
@@ -113,7 +115,7 @@ def gt_creator(input_size, stride, label_lists=[], name='VOC'):
                     gt_tensor[batch_index, grid_y, grid_x, 2:6] = np.array([tx, ty, tw, th])
                     gt_tensor[batch_index, grid_y, grid_x, 6] = weight
 
-    gt_tensor = gt_tensor.reshape(batch_size, -1, 1 + 1 + 4 + 1)
+    gt_tensor = gt_tensor.reshape([batch_size, -1, 1 + 1 + 4 + 1])
 
     return gt_tensor
 
@@ -133,6 +135,10 @@ def loss(pred_conf, pred_cls, pred_txtytwth, label):
     obj = 5.0
     noobj = 0.5
 
+    print("pred_conf", pred_conf.shape)
+    print("pred_cls", pred_cls.shape)
+    print("pred_txty", pred_txtytwth.shape)
+    print("label", label.shape)
     # create loss_f
     conf_loss_function = MSELoss(reduction='mean')
     cls_loss_function = nn.CrossEntropyLoss(reduction='none')

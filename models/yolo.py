@@ -14,7 +14,7 @@ class MyYolo(nn.Module):
         self.trainable = trainable
         self.conf_thresh = conf_thresh
         self.nms_thresh = nms_threshold
-        self.stride = 49
+        self.stride = 32
         self.grid_cell = self.create_grid(input_size)
         self.input_size = input_size
         # w, h, w, h
@@ -44,14 +44,10 @@ class MyYolo(nn.Module):
         out = self.SPP(out)
         out = self.SAM(out)
         out = self.conv_set(out)
-
-        pred = self.pred(out).view(out.shape[0], 1 + self.num_classes + 4, -1)
-        Batch, HW, C = pred.shape
-        print(pred.shape)
+        pred = self.pred(out).view(out.shape[0], 1 + self.num_classes + 4, -1).permute(0, 2, 1)
         conf = pred[:, :, :1]  # 置信度
         class_prob_pred = pred[:, :, 1: self.num_classes + 1]  # 类别概率
         box = pred[:, :, self.num_classes + 1:]  # box中心位置,偏移量
-        print(conf.shape)
         if self.trainable:
             conf_loss, class_loss, box_loss, loss = tools.loss(pred_conf=conf, pred_cls=class_prob_pred,
                                                                pred_txtytwth=box, label=targets)

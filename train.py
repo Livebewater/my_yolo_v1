@@ -13,15 +13,15 @@ if torch.cuda.is_available():
     device = torch.device("cuda")
 else:
     device = torch.device("cpu")
-input_size = [608, 608]
+input_size = [416, 416]
 data_dir = "/home/LiuRunJi/Document/Dataset/coco/"
 cocoDataset = COCODataset(
     root_dir=data_dir,
-    img_size=608,
-    transform=SSDAugmentation(608, mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)),
+    img_size=416,
+    transform=transform,
     debug=False
 )
-yolo_net = MyYolo(input_size=input_size, device=device, trainable=True)
+yolo_net = MyYolo(input_size=input_size, device=device, trainable=True).cuda()
 batch_size = 1
 train_dataLoader = torch.utils.data.DataLoader(
     cocoDataset,
@@ -37,4 +37,4 @@ for data, label in train_dataLoader:
     targets = torch.FloatTensor(tools.gt_creator(input_size=input_size, stride=yolo_net.stride, label_lists=labels)).to(
         device)
     conf_loss, class_loss, box_loss, loss = yolo_net(images, targets=targets)
-    break
+
