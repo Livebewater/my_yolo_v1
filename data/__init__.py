@@ -4,8 +4,8 @@ import numpy as np
 
 
 def detection_collate(batch):
-    """Custom collate fn for dealing with batches of images that have a different
-    number of associated object annotations (bounding boxes).
+    """
+    解决一张图像上可能有多个box的情况,此时label的个数不一致,如果用默认的collate_fn会无法stack起来
 
     Arguments:
         batch: (tuple) A tuple of tensor images and lists of annotations
@@ -16,6 +16,7 @@ def detection_collate(batch):
             2) (list of tensors) annotations for a given image are stacked on
                                  0 dim
     """
+
     targets = []
     imgs = []
     for sample in batch:

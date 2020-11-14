@@ -30,11 +30,21 @@ train_dataLoader = torch.utils.data.DataLoader(
     collate_fn=detection_collate,
     num_workers=8
 )
-optimizer = optim.SGD(yolo_net.parameters(), lr=1e-4, momentum=0.9, weight_decay=5e-4)
-for data, label in train_dataLoader:
-    labels = [_.tolist() for _ in label]
-    images = data.to(device)
-    targets = torch.FloatTensor(tools.gt_creator(input_size=input_size, stride=yolo_net.stride, label_lists=labels)).to(
-        device)
-    conf_loss, class_loss, box_loss, loss = yolo_net(images, targets=targets)
 
+
+train_epoch = 200
+eval_epoch = 40
+optimizer = optim.SGD(yolo_net.parameters(), lr=1e-4, momentum=0.9, weight_decay=5e-4)
+for epoch in range(train_epoch):
+    if (epoch + 1) % eval_epoch == 0:
+        yolo_net.trainable = False
+        for data, label in train_dataLoader:
+            optimizer.zero_grad()
+            labels = [_.tolist() for _ in label]
+            images = data.to(device)
+            targets = torch.FloatTensor(
+                tools.gt_creator(input_size=input_size, stride=yolo_net.stride, label_lists=labels)).to(
+                device)
+            conf_loss, class_loss, box_loss, loss = yolo_net(images, targets=targets)
+            loss.backward()
+            optimizer.step()

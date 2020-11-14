@@ -28,7 +28,7 @@ class BasicBlock(nn.Module):
         super(BasicBlock, self).__init__()
         self.conv1 = conv3x3(in_planes, out_planes, stride)
         self.bn1 = nn.BatchNorm2d(out_planes)
-        self.relu = nn.ReLU(inplace=True)
+        self.relu = nn.ReLU(inplace=False)
         self.conv2 = conv3x3(out_planes, out_planes)
         self.bn2 = nn.BatchNorm2d(out_planes)
         self.downsample = downsample

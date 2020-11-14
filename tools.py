@@ -135,10 +135,10 @@ def loss(pred_conf, pred_cls, pred_txtytwth, label):
     obj = 5.0
     noobj = 0.5
 
-    print("pred_conf", pred_conf.shape)
-    print("pred_cls", pred_cls.shape)
-    print("pred_txty", pred_txtytwth.shape)
-    print("label", label.shape)
+    # print("pred_conf", pred_conf.shape)
+    # print("pred_cls", pred_cls.shape)
+    # print("pred_txty", pred_txtytwth.shape)
+    # print("label", label.shape)
     # create loss_f
     conf_loss_function = MSELoss(reduction='mean')
     cls_loss_function = nn.CrossEntropyLoss(reduction='none')
