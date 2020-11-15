@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 import cv2
 import numpy as np
 
-VOC_CLASSES = (  # always index 0
+VOC_CLASSES = (
     'aeroplane', 'bicycle', 'bird', 'boat',
     'bottle', 'bus', 'car', 'cat', 'chair',
     'cow', 'diningtable', 'dog', 'horse',
@@ -40,6 +40,7 @@ class VOCAnnotationTransform(object):
 
 
 class VOCDataset(Dataset):
+
     def __init__(self, root_dir, dataset_type=["train"], year=["2007"], transform=None,
                  target_transform=VOCAnnotationTransform, size=[416, 416]):
         """
@@ -54,7 +55,10 @@ class VOCDataset(Dataset):
         """
         self.root = root_dir
         self.dataset_type = dataset_type
-        self.transform = transform(size)
+        if transform is not None:
+            self.transform = transform(size)
+        else:
+            self.transform = transform
         self.size = size
         self.target_transform = target_transform
         self.image_path = {}
@@ -75,6 +79,15 @@ class VOCDataset(Dataset):
     def __getitem__(self, index):
         images, targets, H, W = self.get_items(index)
         return torch.from_numpy(images), targets
+
+    def get_test_items(self, index):
+        year, id = self._id[index]
+
+        target = ET.parse(op.join(self.annotations_path[year], f"{id}.xml")).getroot()
+        image = cv2.imread(op.join(self.image_path[year], f"{id}.jpg"))
+        H, W, C = image.shape
+        target = self.target_transform()(target, W, H)
+        return image.transpose([2, 0, 1]), target
 
     def get_items(self, index):
         year, id = self._id[index]

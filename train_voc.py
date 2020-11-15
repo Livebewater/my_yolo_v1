@@ -15,7 +15,7 @@ train_epoch = 300
 use_board = True
 eval_epoch = 40
 input_size = [416, 416]
-data_dir = "/home/LiuRunJi/Document/Dataset/coco/"
+data_dir = "/home/yuki/Document/Dataset/voc/"
 
 if torch.cuda.is_available():
     print("using gpu")
@@ -32,7 +32,7 @@ if use_board:
     writer = SummaryWriter(log_path)
 
 vocDataset = VOCDataset(root_dir="/home/yuki/Documents/DataSet/VOC/", transform=BaseTransform)
-yolo_net = MyYolo(input_size=input_size, device=device, trainable=True).cuda()
+yolo_net = MyYolo(input_size=input_size, device=device, trainable=True, num_classes=20)
 batch_size = 5
 train_dataLoader = DataLoader(
     vocDataset,
@@ -60,13 +60,13 @@ for epoch in range(train_epoch):
         optimizer.step()
         if iter_i % 30 == 0:
             print(
-                f"{epoch}/{train_epoch} {iter_i} / {iteration} conf loss: [{conf_loss.item():.3f}] class loss: [{class_loss.item():.3f}] box loss: /"
+                f"{epoch}/{train_epoch} {iter_i} / {iteration} conf loss: [{conf_loss.item():.3f}] class loss: [{class_loss.item():.3f}] box loss:"
                 f"[{box_loss.item():3f}] total loss: [{loss.item():.3f}]")
         if iter_i % 50 == 0 and use_board:
             writer.add_scalar("object conf loss", conf_loss.item(), iter_i + epoch * batch_size)
             writer.add_scalar("class loss", class_loss.item(), iter_i + epoch * batch_size)
             writer.add_scalar("box loss", box_loss.item(), iter_i + epoch * batch_size)
             writer.add_scalar("total loss", loss.item(), iter_i + epoch * batch_size)
-    if (epoch+1) % 10 ==0:
-        print("saving model", epoch+1)
-        torch.save(yolo_net.state_dict(), f"{epoch+1}.pth")
+    if (epoch + 1) % 10 == 0:
+        print("saving model", epoch + 1)
+        torch.save(yolo_net.state_dict(), f"{epoch + 1}.pth")

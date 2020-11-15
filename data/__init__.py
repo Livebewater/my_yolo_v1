@@ -1,6 +1,7 @@
 import torch
 import cv2
 import numpy as np
+from data.vocdataset import *
 
 
 def detection_collate(batch):
@@ -41,3 +42,19 @@ class BaseTransform:
 
     def __call__(self, image, boxes=None, labels=None):
         return base_transform(image, self.size, self.mean, self.std), boxes, labels
+
+
+def draw(img, targets, index=0, pred_targets=None):
+    boxes, scores, class_prob = pred_targets[0]
+    boxes *= 416
+    for i in range(len(targets)):
+        cv2.rectangle(img, targets[i], [255, 255, 0], 2)
+
+    if pred_targets is not None:
+        for i in range(len(boxes)):
+            cv2.rectangle(img, boxes[i], [255, 0, 255], 2)
+            cv2.putText(img, f"{VOC_CLASSES[class_prob[i]]}, {scores[i]:.2f}", (int(boxes[i][0]), int(boxes[i][1])),
+                        cv2.FONT_HERSHEY_SIMPLEX, 1,
+                        (0, 255, 0), 1)
+    cv2.imshow(f"{index}", img)
+    cv2.waitKey(100)
