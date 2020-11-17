@@ -41,7 +41,7 @@ class VOCAnnotationTransform(object):
 
 class VOCDataset(Dataset):
 
-    def __init__(self, root_dir, dataset_type=["train"], year=["2007"], transform=None,
+    def __init__(self, root_dir, dataset_type=["trainval", "trainval"], year=["2007", "2012"], transform=None,
                  target_transform=VOCAnnotationTransform, size=[416, 416]):
         """
 
