@@ -30,9 +30,9 @@ class MSELoss(nn.Module):
     def forward(self, inputs, targets):
         pos_id = (targets == 1.0).float()
         neg_id = (targets == 0.0).float()
-        pos_loss = pos_id * (inputs - targets) ** 2
-        neg_loss = neg_id * (inputs) ** 2
-        # loss = (inputs - target) ** 2
+        pos_loss = pos_id * ((inputs - targets) ** 2)
+        neg_loss = neg_id * (inputs ** 2)
+
         if self.reduction == 'mean':
             pos_loss = torch.mean(torch.sum(pos_loss, 1))
             neg_loss = torch.mean(torch.sum(neg_loss, 1))
@@ -62,6 +62,7 @@ class BCE_focal_loss(nn.Module):
 def generate_dxdywh(gt_label, w, h, s):
     xmin, ymin, xmax, ymax = gt_label[:-1]
     # compute the center, width and height
+
     c_x = (xmax + xmin) / 2 * w
     c_y = (ymax + ymin) / 2 * h
     box_w = (xmax - xmin) * w
@@ -135,22 +136,20 @@ def loss(pred_conf, pred_cls, pred_txtytwth, label):
     obj = 5.0
     noobj = 0.5
 
-    # print("pred_conf", pred_conf.shape)
-    # print("pred_cls", pred_cls.shape)
-    # print("pred_txty", pred_txtytwth.shape)
-    # print("label", label.shape)
-    # create loss_f
     conf_loss_function = MSELoss(reduction='mean')
     cls_loss_function = nn.CrossEntropyLoss(reduction='none')
     txty_loss_function = nn.BCEWithLogitsLoss(reduction='none')
+    # txty_loss_function = nn.MSELoss(reduction='none')
     twth_loss_function = nn.MSELoss(reduction='none')
 
     pred_conf = torch.sigmoid(pred_conf[:, :, 0])
+
     pred_cls = pred_cls.permute(0, 2, 1)
     pred_txty = pred_txtytwth[:, :, :2]  # 中心位置
     pred_twth = pred_txtytwth[:, :, 2:]  # 偏移量
 
     gt_obj = label[:, :, 0].float()  # 有无物体
+
     gt_cls = label[:, :, 1].long()  # target这里应该就是一个one-hot向量
     gt_txtytwth = label[:, :, 2:-1].float()
     gt_box_scale_weight = label[:, :, -1]

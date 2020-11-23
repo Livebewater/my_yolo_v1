@@ -10,19 +10,22 @@ if torch.cuda.is_available():
     device = "cuda"
 else:
     device = "cpu"
-data_dir = "/home/yuki/Documents/DataSet/VOC"
+
+data_dir = "/home/LiuRunJi/Documents/Dataset/VOC/"
+
 batch_size = 256
 input_size = [416, 416]
 vocDataset = VOCDataset(root_dir=data_dir, transform=BaseTransform, dataset_type=["val"], year=["2007"])
-yolo_net = MyYolo(input_size=input_size, device=device, trainable=False, num_classes=20, conf_thresh=1e-4).cuda()
-yolo_net.load_state_dict(torch.load(r"/home/yuki/Documents/some_fun/My-yolo-v1/150.pth"))
-# index = random.randint(0, len(vocDataset))
-index = 1422
-image, targets = vocDataset[index]
-image = image.unsqueeze(dim=0).cuda()
-pred_targets = yolo_net(image)
+yolo_net = MyYolo(input_size=input_size, device=device, trainable=False, num_classes=20, conf_thresh=0.1).to(device)
+yolo_net.load_state_dict(torch.load(r"model/voc/20-11-17/250.pth"))
+while True:
+    index = random.randint(0, len(vocDataset))
+    image, targets = vocDataset[index]
+    image = image.unsqueeze(dim=0).to(device)
+    pred_targets = yolo_net(image)
 
-show_image, _ = vocDataset.get_test_items(index)
-show_image = np.array(show_image).transpose([1, 2, 0])
-targets *= 416
-draw(show_image, targets, index, pred_targets)
+    show_image, _ = vocDataset.get_test_items(index)
+    show_image = np.array(show_image).transpose([1, 2, 0])
+    print(pred_targets)
+    targets[:, :-1] *= 416
+    draw(show_image, targets, index, pred_targets)
