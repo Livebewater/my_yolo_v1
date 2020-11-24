@@ -134,12 +134,11 @@ def loss(pred_conf, pred_cls, pred_txtytwth, label):
 
     '''
     obj = 5.0
-    noobj = 0.5
+    noobj = 1
 
     conf_loss_function = MSELoss(reduction='mean')
     cls_loss_function = nn.CrossEntropyLoss(reduction='none')
     txty_loss_function = nn.BCEWithLogitsLoss(reduction='none')
-    # txty_loss_function = nn.MSELoss(reduction='none')
     twth_loss_function = nn.MSELoss(reduction='none')
 
     pred_conf = torch.sigmoid(pred_conf[:, :, 0])

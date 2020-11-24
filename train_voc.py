@@ -37,7 +37,7 @@ if saving_model:
         os.makedirs(save_path, exist_ok=True)
 
 vocDataset = VOCDataset(root_dir=data_dir, transform=SSDAugmentation([416, 416], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
-yolo_net = MyYolo(input_size=input_size, device=device, trainable=True, num_classes=8).to(device)
+yolo_net = MyYolo(input_size=input_size, device=device, trainable=True, num_classes=20).to(device)
 batch_size = 64
 train_dataLoader = DataLoader(
     vocDataset,

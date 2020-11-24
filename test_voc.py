@@ -15,10 +15,11 @@ data_dir = "/home/LiuRunJi/Documents/Dataset/VOC/"
 
 batch_size = 256
 input_size = [416, 416]
-vocDataset = VOCDataset(root_dir=data_dir, transform=BaseTransform, dataset_type=["val"], year=["2007"])
-yolo_net = MyYolo(input_size=input_size, device=device, trainable=False, num_classes=20, conf_thresh=0.1).to(device)
-yolo_net.load_state_dict(torch.load(r"model/voc/20-11-17/250.pth"))
-while True:
+vocDataset = VOCDataset(root_dir=data_dir, transform=BaseTransform(input_size), dataset_type=["val"], year=["2007"])
+yolo_net = MyYolo(input_size=input_size, device=device, trainable=False, num_classes=20, conf_thresh=0.5).to(device)
+yolo_net.load_state_dict(torch.load(r"model/voc/20-11-23/160.pth"))
+f=1
+while true:
     index = random.randint(0, len(vocDataset))
     image, targets = vocDataset[index]
     image = image.unsqueeze(dim=0).to(device)
@@ -29,3 +30,4 @@ while True:
     print(pred_targets)
     targets[:, :-1] *= 416
     draw(show_image, targets, index, pred_targets)
+
