@@ -11,7 +11,7 @@ import os
 import torch.optim as optim
 import torch.backends.cudnn as cudnn
 
-train_epoch = 160
+train_epoch = 250
 use_board = True
 input_size = [416, 416]
 data_dir = "/home/LiuRunJi/Documents/Dataset/VOC/"
@@ -38,7 +38,7 @@ if saving_model:
 
 vocDataset = VOCDataset(root_dir=data_dir, transform=SSDAugmentation([416, 416], mean=(0.406, 0.456, 0.485), std=(0.225, 0.224, 0.229)))
 yolo_net = MyYolo(input_size=input_size, device=device, trainable=True, num_classes=20).to(device)
-batch_size = 64
+batch_size = 32
 train_dataLoader = DataLoader(
     vocDataset,
     batch_size=batch_size,
