@@ -55,10 +55,8 @@ class VOCDataset(Dataset):
         """
         self.root = root_dir
         self.dataset_type = dataset_type
-        if transform is not None:
-            self.transform = transform(size)
-        else:
-            self.transform = transform
+      
+        self.transform = transform
         self.size = size
         self.target_transform = target_transform
         self.image_path = {}
